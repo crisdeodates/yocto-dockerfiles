@@ -1,14 +1,14 @@
-# alama-8-base
+# alama-9-base
 # Copyright (C) 2015-2020 Intel Corporation
 # Copyright (C) 2022 Konsulko Group
 #
 # SPDX-License-Identifier: GPL-2.0-only
 #
 
-FROM almalinux:8
+FROM almalinux:9
 
 RUN dnf install -y 'dnf-command(config-manager)' && \
-    dnf config-manager --set-enabled powertools && \
+    dnf config-manager --set-enabled crb && \
     dnf -y install epel-release && \
     dnf -y update && \
     dnf -y install \
@@ -62,13 +62,11 @@ RUN dnf install -y 'dnf-command(config-manager)' && \
     groupadd -g 1000 yoctouser && \
     useradd -u 1000 -g yoctouser -m yoctouser
 
-# Install buildtools. The original reason this was needed was due to a
-# sanity check for make 4.1.2, but now we're relying on python-3.8 so instead
-# of -make, install all the buildtools
-
-COPY install-buildtools.sh /
-RUN bash /install-buildtools.sh && \
-    rm /install-buildtools.sh
+# Install buildtools-make. The original reason this was needed was due to a
+# sanity check for make 4.1.2
+COPY install-buildtools-make.sh /
+RUN bash /install-buildtools-make.sh && \
+    rm /install-buildtools-make.sh
 
 COPY build-install-dumb-init.sh /
 RUN  bash build-install-dumb-init.sh && \

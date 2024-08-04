@@ -22,11 +22,11 @@ elif grep -q Fedora /etc/*release; then
     INSTALL_CMD="dnf -y install glibc-static"
     REMOVE_CMD="dnf -y remove glibc-static"
 elif grep -q Ubuntu /etc/*release || grep -q Debian /etc/*release; then
-    INSTALL_CMD="apt-get install -y python3-pip"
-    REMOVE_CMD="apt-get remove -y python3-pip"
+    INSTALL_CMD=""
+    REMOVE_CMD=""
 elif grep -q openSUSE /etc/*release; then
-    INSTALL_CMD="zypper --non-interactive install python3-pip glibc-devel-static"
-    REMOVE_CMD="zypper --non-interactive remove python3-pip glibc-devel-static"
+    INSTALL_CMD="zypper --non-interactive install glibc-devel-static"
+    REMOVE_CMD="zypper --non-interactive remove glibc-devel-static"
 else
     exit 1
 fi
@@ -36,6 +36,10 @@ echo "3eda470d8a4a89123f4516d26877a727c0945006c8830b7e3bad717a5f6efc4e  v1.2.5.t
 
 sha256sum -c sha256sums || exit 1
 tar xf v1.2.5.tar.gz || exit 1
+# https://github.com/Yelp/dumb-init/issues/273
+sed -i '128 i \ \ \ \ packages=[],' dumb-init*/setup.py || exit 1
+# https://github.com/Yelp/dumb-init/issues/286
+echo py >> dumb-init*/requirements-dev.txt
 
 # Replace the versions of python used for testing dumb-init. Since it is
 # testing c code, and not python it shouldn't matter. Also remove the
@@ -45,19 +49,9 @@ sed -i -e 's/tox -e pre-commit//' dumb-init*/Makefile || exit 1
 
 $INSTALL_CMD || exit 1
 
-# Setup the buildtools enviroment in the subshell, since we really only want
-# to use python3 from buildtools.
-(
-if [ -e /opt/poky/*/environment-setup-*-pokysdk-linux ]; then
-    . /opt/poky/*/environment-setup-*-pokysdk-linux
-fi
-
-pip3 install virtualenv || exit 1
-
 virtualenv $builddir/venv || exit 1
 . $builddir/venv/bin/activate || exit 1
-pip3 install setuptools==59.6.0 tox || exit 1
-)
+pip3 install setuptools tox || exit 1
 
 . $builddir/venv/bin/activate || exit 1
 cd dumb-init* || exit 1

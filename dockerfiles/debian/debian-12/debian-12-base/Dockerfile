@@ -1,38 +1,49 @@
-# debian-9-base
+# debian-12-base
 # Copyright (C) 2015-2021 Intel Corporation
 #
 # SPDX-License-Identifier: GPL-2.0-only
 #
 
-FROM debian:9
+FROM debian:12
+
+ARG TARGETPLATFORM
 
 RUN apt-get clean && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
-        gawk \
-        wget \
-        git-core \
-        subversion \
-        diffstat \
-        unzip \
-        sysstat \
-        texinfo \
         build-essential \
         chrpath \
-        socat \
-        python \
-        python3 \
         cpio \
-        xz-utils \
-        locales \
-        screen \
-        tmux \
-        sudo \
+        diffstat \
+        file \
         fluxbox \
+        gawk \
+        git-core \
+        locales \
+        lz4 \
         procps \
+        python3 \
+        python3-pip \
+        python3-virtualenv \
+        screen \
+        socat \
+        subversion \
+        sudo \
+        sysstat \
+        texinfo \
         tightvncserver \
-        liblz4-tool \
+        tmux \
+        unzip \
+        wget \
+        xz-utils \
         zstd && \
+    case ${TARGETPLATFORM} in \
+        "linux/amd64") \
+            DEBIAN_FRONTEND=noninteractive apt-get install -y \
+                gcc-multilib \
+                g++-multilib \
+            ;; \
+    esac && \
     cp -af /etc/skel/ /etc/vncskel/ && \
     echo "export DISPLAY=1" >>/etc/vncskel/.bashrc && \
     mkdir  /etc/vncskel/.vnc && \
@@ -41,17 +52,9 @@ RUN apt-get clean && \
     useradd -U -m yoctouser && \
     echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen && locale-gen
 
-# Install buildtools. The original reason this was needed was due to a
-# Python 3.6 requirement.
-COPY install-buildtools.sh /
-RUN bash /install-buildtools.sh && \
-    rm /install-buildtools.sh
-
-COPY build-install-dumb-init.sh install-multilib.sh /
+COPY build-install-dumb-init.sh  /
 RUN  bash /build-install-dumb-init.sh && \
      rm /build-install-dumb-init.sh && \
-     bash /install-multilib.sh && \
-     rm /install-multilib.sh && \
      apt-get clean
 
 USER yoctouser
